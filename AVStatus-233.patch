@@ -1,0 +1,84 @@
+3c3
+< ' Version: 2.32
+---
+> ' Version: 2.33
+8c8
+< ' Date: April 23rd, 2020
+---
+> ' Date: May 5th, 2020
+57a58,59
+> Dim strBitdefenderKeyPath, strBitdefenderInstallPath
+> 
+62c64
+< Version = "2.32"
+---
+> Version = "2.33"
+387a390,391
+>   ElseIf InstalledAV="Bitdefender Endpoint Security Tools" Then
+>     ObtainBitdefenderGZ 'Call the function to grab info abount Bitdefender GravityZone
+532a537
+>     strBitdefenderKeyPath = "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Endpoint Security" 
+974c979,986
+<        
+---
+>     '--- Check for Bitdefender Endpoint Security Tools / Bitdefender GravityZone ---
+>     ElseIf RegKeyExists ("HKLM\" & strBitdefenderKeyPath & "\DisplayName") Then
+>         objReg.GetStringValue HKEY_LOCAL_MACHINE,strBitdefenderKeyPath,"DisplayName",ReturnedstrValue1
+>         InstalledAV = ReturnedstrValue1
+>         objReg.GetStringValue HKEY_LOCAL_MACHINE,strBitdefenderKeyPath,"DisplayVersion",ReturnedstrValue1
+>         FormattedAVVersion = ReturnedstrValue1
+>         objReg.GetStringValue HKEY_LOCAL_MACHINE,strBitdefenderKeyPath,"InstallLocation",ReturnedstrValue1
+>         strBitdefenderInstallPath = ReturnedstrValue1
+3770a3783,3834
+> ' *************************************  
+> ' Sub: ObtainBitdefenderGZ
+> ' *************************************
+> Sub ObtainBitdefenderGZ
+>     Set objFSO = CreateObject("Scripting.FileSystemObject")
+>     dim Path
+>     Path = strBitdefenderInstallPath & "\update_statistics.xml"
+> 
+>     Set objFile = objFSO.OpenTextFile(Path, 1) 
+>     Set f = objFSO.GetFile(Path)
+>     Set objFile = objFSO.GetFile(Path) 
+>     Dim objXMLDoc, nodes
+>     Dim ServiceActive1, ServiceActive2
+> 
+>     AVDatVersion = objFile.DateLastModified
+>     output.writeline "- The file was last modified on: " & AVDatVersion
+>     output.writeline "- The current date is: " & CurrentDate
+> 
+>     CalculatedPatternAge = DateDiff("d",AVDatVersion,CurrentDate)
+>     output.writeline "- The last time Bitdefender product was updated " & CalculatedPatternAge & " days ago."
+> 
+>     Set objXMLDoc = CreateObject("Microsoft.XMLDOM") 
+>     objXMLDoc.async = False 
+>     objXMLDoc.load(Path)
+> 
+>     Set nodes = objXMLDoc.getElementsByTagName("Antivirus/Update")
+> 
+>     For Each node In nodes
+>         AVDatVersion = node.getAttribute("succtime")
+>     Next
+> 
+>     FormattedPatternAge = DateAdd("s", AVDatVersion, #1/1/1970#)
+>     CalculatedPatternAge = DateDiff("d",FormattedPatternAge,CurrentDate)
+>     output.writeline "- The last time Bitdefender antivirus engine was updated " & CalculatedPatternAge & " days ago."
+> 
+>     CalculateAVAge
+> 
+>     ServiceActive1 = isProcessRunning(".","EPProtectedService.exe")
+>     ServiceActive2 = isProcessRunning(".","EPSecurityService.exe")
+>     If ( ServiceActive1 or ServiceActive2) Then
+>         OnAccessScanningEnabled = TRUE
+>     Else
+>         OnAccessScanningEnabled = FALSE
+>     End If
+> 
+>     FormattedAVVersion = "Product version: " & FormattedAVVersion & _
+>                         ", Last AV update: " & FormattedPatternAge & _
+>                         ", EPProtected Service: " & ServiceActive1 & _ 
+>                         ", EPSecurity Service: " & ServiceActive2 
+>     output.writeline "- " & FormattedAVVersion
+> 
+> End Sub
